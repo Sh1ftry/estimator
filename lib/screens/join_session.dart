@@ -14,6 +14,7 @@ class JoinSession extends StatefulWidget {
 
 class _JoinSessionState extends State<JoinSession> {
   final TextEditingController _displayNameController = TextEditingController();
+  final TextEditingController _sessionCodeController = TextEditingController();
 
   @override
   void initState() {
@@ -37,6 +38,7 @@ class _JoinSessionState extends State<JoinSession> {
         hintText: 'Display name',
       ),
       EstimatorTextField(
+        controller: _sessionCodeController,
         hintText: 'Session code',
       ),
       EstimatorButton(
@@ -45,7 +47,7 @@ class _JoinSessionState extends State<JoinSession> {
           Navigator.pushNamed(
             context,
             '/vote',
-            arguments: VotingArguments("", false),
+            arguments: VotingArguments("", false, _sessionCodeController.text, 0),
           )
         },
       ),

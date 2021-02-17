@@ -1,6 +1,7 @@
 import 'package:estimator/constants.dart';
 import 'package:estimator/models/voting_arguments.dart';
 import 'package:estimator/screens/edit_task.dart';
+import 'package:estimator/services/socket.dart';
 import 'package:estimator/widgets/button.dart';
 import 'package:estimator/widgets/double_button.dart';
 import 'package:estimator/widgets/layout.dart';
@@ -8,6 +9,7 @@ import 'package:estimator/widgets/tasks_list.dart';
 import 'package:estimator/widgets/two_color_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class TaskList extends StatefulWidget {
   @override
@@ -17,8 +19,26 @@ class TaskList extends StatefulWidget {
 class _TaskListState extends State<TaskList> {
   final ScrollController _scrollController = ScrollController();
   int _selectedTask = -1;
+  String _sessionCode = '';
+  int _voters = 0;
+
+  final IO.Socket _socket = EstimatorServer().socket;
 
   final List<String> _tasks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _socket.on('joined', _changeMaxUsers);
+    _socket.on('user left', _changeMaxUsers);
+  }
+
+  @override
+  void dispose() {
+    _socket.off('joined', _changeMaxUsers);
+    _socket.off('user left', _changeMaxUsers);
+    super.dispose();
+  }
 
   _navigateToTaskEdit(BuildContext context, int index) async {
     final task = await Navigator.push(
@@ -41,12 +61,12 @@ class _TaskListState extends State<TaskList> {
   }
 
   _navigateToVoting(BuildContext context) async {
+    _socket.emit('change', [_tasks[_selectedTask]]);
     final results = await Navigator.pushNamed(
       context,
       '/vote',
-      arguments: VotingArguments(_tasks[_selectedTask], true),
+      arguments: VotingArguments(_tasks[_selectedTask], true, _sessionCode, _voters),
     );
-    print(results);
     if(results == null) {
       setState(() {
         _tasks.removeAt(_selectedTask);
@@ -55,15 +75,22 @@ class _TaskListState extends State<TaskList> {
     }
   }
 
+  _changeMaxUsers(usersCount) {
+    setState(() {
+      _voters = usersCount;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    _sessionCode = ModalRoute.of(context).settings.arguments;
     return EstimatorLayout(
       widgets: [
         Padding(
           padding: TOP_PADDING,
           child: EstimatorTwoColorText(
             firstText: 'session code ',
-            secondText: 'xkd11',
+            secondText: _sessionCode,
             firstTextColor: LIGHT_GRAY,
             secondTextColor: DARK_GREEN,
           ),
@@ -121,7 +148,10 @@ class _TaskListState extends State<TaskList> {
         EstimatorButton(
           text: 'End session',
           bottomMargin: BOTTOM_MARGIN,
-          onPressed: () => {Navigator.pop(context)},
+          onPressed: () {
+            _socket.disconnect();
+            Navigator.pop(context);
+          },
         )
       ],
     );
