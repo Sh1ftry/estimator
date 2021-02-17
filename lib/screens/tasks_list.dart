@@ -1,8 +1,11 @@
+import 'package:estimator/constants.dart';
+import 'package:estimator/models/voting_arguments.dart';
 import 'package:estimator/screens/edit_task.dart';
 import 'package:estimator/widgets/button.dart';
 import 'package:estimator/widgets/double_button.dart';
 import 'package:estimator/widgets/layout.dart';
 import 'package:estimator/widgets/tasks_list.dart';
+import 'package:estimator/widgets/two_color_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -15,25 +18,39 @@ class _TaskListState extends State<TaskList> {
   final ScrollController _scrollController = ScrollController();
   int _selectedTask = -1;
 
-  final List<String> tasks = List.generate(
-      1, (i) => 'ID-177 Lorem ipsum dolor sit amet lorem dolor elele');
+  final List<String> _tasks = [];
 
   _navigateToTaskEdit(BuildContext context, int index) async {
     final task = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditTask(task: index != -1 ? tasks[index] : null),
+        builder: (context) =>
+            EditTask(task: index != -1 ? _tasks[index] : null),
       ),
     );
     final taskTrimmed = task.toString().trim();
-    if(index != -1 && taskTrimmed != "") {
+    if (index != -1 && taskTrimmed != "") {
       setState(() {
-        tasks[index] = taskTrimmed;
+        _tasks[index] = taskTrimmed;
+      });
+    } else if (taskTrimmed != "") {
+      setState(() {
+        _tasks.add(taskTrimmed);
       });
     }
-    else if(taskTrimmed != "") {
+  }
+
+  _navigateToVoting(BuildContext context) async {
+    final results = await Navigator.pushNamed(
+      context,
+      '/vote',
+      arguments: VotingArguments(_tasks[_selectedTask], true),
+    );
+    print(results);
+    if(results == null) {
       setState(() {
-        tasks.add(taskTrimmed);
+        _tasks.removeAt(_selectedTask);
+        _selectedTask = -1;
       });
     }
   }
@@ -43,14 +60,24 @@ class _TaskListState extends State<TaskList> {
     return EstimatorLayout(
       widgets: [
         Padding(
-          padding: const EdgeInsets.only(top: 20.0),
+          padding: TOP_PADDING,
+          child: EstimatorTwoColorText(
+            firstText: 'session code ',
+            secondText: 'xkd11',
+            firstTextColor: LIGHT_GRAY,
+            secondTextColor: DARK_GREEN,
+          ),
+        ),
+        Padding(
+          padding: TOP_PADDING,
           child: Center(
             child: Text(
               "Select a task to estimate",
               style: TextStyle(
-                  fontFamily: 'HemiHead',
-                  fontSize: 24.0,
-                  color: const Color.fromARGB(255, 4, 53, 64)),
+                fontFamily: 'HemiHead',
+                fontSize: 24.0,
+                color: DARK_GREEN,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -60,14 +87,14 @@ class _TaskListState extends State<TaskList> {
             padding: const EdgeInsets.all(20.0),
             child: EstimatorTasksList(
               scrollController: _scrollController,
-              tasks: tasks,
+              tasks: _tasks,
               selectedTask: _selectedTask,
               onDeletePressed: (index) {
                 setState(() {
                   if (_selectedTask == index) {
                     _selectedTask = -1;
                   }
-                  tasks.removeAt(index);
+                  _tasks.removeAt(index);
                 });
               },
               onTaskPressed: (index) {
@@ -87,11 +114,13 @@ class _TaskListState extends State<TaskList> {
               : null,
         ),
         EstimatorButton(
-            text: 'Start voting',
-            onPressed: () => {Navigator.pushNamed(context, '/vote')}),
+          text: 'Start voting',
+          onPressed:
+              _selectedTask != -1 ? () => {_navigateToVoting(context)} : null,
+        ),
         EstimatorButton(
-          text: 'Go back',
-          bottomMargin: 60,
+          text: 'End session',
+          bottomMargin: BOTTOM_MARGIN,
           onPressed: () => {Navigator.pop(context)},
         )
       ],

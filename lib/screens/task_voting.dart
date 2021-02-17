@@ -1,19 +1,55 @@
 import 'package:estimator/constants.dart';
+import 'package:estimator/models/voting_arguments.dart';
 import 'package:estimator/widgets/button.dart';
 import 'package:estimator/widgets/grid.dart';
 import 'package:estimator/widgets/layout.dart';
 import 'package:estimator/widgets/text.dart';
 import 'package:estimator/widgets/two_color_text.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class TaskVoting extends StatelessWidget {
-  final ScrollController scrollController = ScrollController();
-  final int votes = 3;
-  final int maxVotes = 5;
-  final List<String> estimates = ["0", "1", "2", "3", "5", "8"];
+class TaskVoting extends StatefulWidget {
+  @override
+  _TaskVotingState createState() => _TaskVotingState();
+}
+
+class _TaskVotingState extends State<TaskVoting> {
+  final ScrollController _scrollController = ScrollController();
+
+  int _votes = 0;
+  final int _maxVotes = 1;
+  List<String> _estimates = [];
+  int _selected = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEstimates();
+  }
+
+  _loadEstimates() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _estimates = prefs.getString('estimates').split(" ");
+    });
+  }
+
+  _navigateToResults(votingArguments) async {
+    await Navigator.pushNamed(
+      context,
+      '/results',
+      arguments: votingArguments,
+    );
+    setState(() {
+      _votes = 0;
+      _selected = -1;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final VotingArguments votingArguments =
+        ModalRoute.of(context).settings.arguments;
     return EstimatorLayout(widgets: [
       Padding(
         padding: TOP_PADDING,
@@ -34,8 +70,7 @@ class TaskVoting extends StatelessWidget {
       Padding(
         padding: HORIZONTAL_PADDING,
         child: EstimatorText(
-          text:
-          'ID-177 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque maximus.',
+          text: votingArguments.task.isEmpty ? "waiting for host to select task" : votingArguments.task,
           color: DARK_GREEN,
         ),
       ),
@@ -43,16 +78,36 @@ class TaskVoting extends StatelessWidget {
         padding: TOP_PADDING,
         child: EstimatorTwoColorText(
           firstText: 'votes',
-          secondText: ' $votes/$maxVotes',
+          secondText: ' $_votes/$_maxVotes',
           firstTextColor: LIGHT_GRAY,
           secondTextColor: DARK_GREEN,
         ),
       ),
-      EstimatorGrid(values: estimates),
+      EstimatorGrid(
+        values: _estimates,
+        selected: _selected,
+        onPressed: (index) => {
+          setState(() {
+            if (_selected == index || votingArguments.task.isEmpty) {
+              _selected = -1;
+            } else {
+              _selected = index;
+            }
+          })
+        },
+      ),
+      votingArguments.isHost
+          ? EstimatorButton(
+              text: 'Finish voting',
+              onPressed: () => {
+                _navigateToResults(votingArguments)
+              },
+            )
+          : Container(),
       EstimatorButton(
-        text: 'Leave',
-        bottomMargin: 60,
-        onPressed: () => {Navigator.pop(context)},
+        text: votingArguments.isHost ? 'Go back' : 'Leave',
+        bottomMargin: BOTTOM_MARGIN,
+        onPressed: () => {Navigator.pop(context, "left")},
       )
     ]);
   }

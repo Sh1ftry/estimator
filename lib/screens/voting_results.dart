@@ -1,5 +1,6 @@
 import 'package:estimator/constants.dart';
 import 'package:estimator/models/vote.dart';
+import 'package:estimator/models/voting_arguments.dart';
 import 'package:estimator/widgets/button.dart';
 import 'package:estimator/widgets/double_button.dart';
 import 'package:estimator/widgets/layout.dart';
@@ -9,9 +10,15 @@ import 'package:estimator/widgets/two_color_text.dart';
 import 'package:estimator/widgets/votes.dart';
 import 'package:flutter/widgets.dart';
 
-class VotingResults extends StatelessWidget {
-  final ScrollController scrollController = ScrollController();
-  final results = [
+class VotingResults extends StatefulWidget {
+  @override
+  _VotingResultsState createState() => _VotingResultsState();
+}
+
+class _VotingResultsState extends State<VotingResults> {
+  final ScrollController _scrollController = ScrollController();
+
+  final _results = [
     EstimatorVote("Michał", "3"),
     EstimatorVote("Adam", "3"),
     EstimatorVote("Wojtek", "2"),
@@ -20,6 +27,8 @@ class VotingResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final VotingArguments votingArguments =
+        ModalRoute.of(context).settings.arguments;
     return EstimatorLayout(widgets: [
       Padding(
         padding: TOP_PADDING,
@@ -40,8 +49,7 @@ class VotingResults extends StatelessWidget {
       Padding(
         padding: HORIZONTAL_PADDING,
         child: EstimatorText(
-          text:
-          'ID-177 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque maximus.',
+          text: votingArguments.task,
           color: DARK_GREEN,
         ),
       ),
@@ -56,7 +64,7 @@ class VotingResults extends StatelessWidget {
         child: Column(
           children: [
             EstimatorVotes(
-              results: results,
+              results: _results,
               mainColor: DARK_GREEN,
               secondaryColor: LIGHT_GRAY,
             ),
@@ -71,15 +79,17 @@ class VotingResults extends StatelessWidget {
           ],
         ),
       ),
-      EstimatorDoubleButton(
+      votingArguments.isHost ? EstimatorDoubleButton(
         leftText: 'Revote',
         leftOnPressed: () => {Navigator.pop(context)},
         rightText: 'Next task',
-        rightOnPressed: () => {Navigator.pop(context)},
-      ),
+        rightOnPressed: () => {
+          Navigator.popUntil(context, ModalRoute.withName('/tasks'))
+        },
+      ) : Container(),
       EstimatorButton(
         text: 'Leave',
-        bottomMargin: 60,
+        bottomMargin: BOTTOM_MARGIN,
         onPressed: () => {Navigator.pop(context)},
       )
     ]);

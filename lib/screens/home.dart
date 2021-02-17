@@ -1,3 +1,4 @@
+import 'package:estimator/constants.dart';
 import 'package:estimator/widgets/button.dart';
 import 'package:estimator/widgets/layout.dart';
 import 'package:estimator/widgets/logo.dart';
@@ -17,7 +18,7 @@ class Home extends StatelessWidget {
             onPressed: () => {Navigator.pushNamed(context, '/join')}),
         EstimatorButton(
           text: 'Configuration',
-          bottomMargin: 60,
+          bottomMargin: BOTTOM_MARGIN,
           onPressed: () => {Navigator.pushNamed(context, '/config')},
         )
       ],

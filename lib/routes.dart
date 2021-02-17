@@ -12,5 +12,6 @@ final Map<String, WidgetBuilder> routes = {
   '/join': (context) => JoinSession(),
   '/config': (context) => Configuration(),
   '/tasks': (context) => TaskList(),
-  '/vote': (context) => VotingResults(),
+  '/vote': (context) => TaskVoting(),
+  '/results': (context) => VotingResults(),
 };

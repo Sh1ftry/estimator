@@ -11,3 +11,4 @@ const Color RED = Color.fromARGB(200, 175, 62, 77);
 
 const EdgeInsets TOP_PADDING = EdgeInsets.only(top: 15.0);
 const EdgeInsets HORIZONTAL_PADDING = EdgeInsets.symmetric(horizontal: 20.0);
+const double BOTTOM_MARGIN = 15.0;

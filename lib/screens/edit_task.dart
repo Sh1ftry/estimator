@@ -52,7 +52,7 @@ class EditTask extends StatelessWidget {
         ),
         EstimatorButton(
           text: 'Go back',
-          bottomMargin: 60,
+          bottomMargin: BOTTOM_MARGIN,
           onPressed: () => {Navigator.pop(context, '')},
         )
       ],

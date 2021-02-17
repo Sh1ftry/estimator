@@ -1,3 +1,4 @@
+import 'package:estimator/constants.dart';
 import 'package:estimator/widgets/button.dart';
 import 'package:estimator/widgets/layout.dart';
 import 'package:estimator/widgets/logo.dart';
@@ -46,7 +47,7 @@ class _StartSessionState extends State<StartSession> {
       ),
       EstimatorButton(
         text: 'Go back',
-        bottomMargin: 60,
+        bottomMargin: BOTTOM_MARGIN,
         onPressed: () => {Navigator.pop(context)},
       )
     ]);
