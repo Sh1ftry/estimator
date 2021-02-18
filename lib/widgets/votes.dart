@@ -19,7 +19,7 @@ class EstimatorVotes extends StatelessWidget {
     final resultsTexts = results
         .map<Widget>((result) => EstimatorTwoColorText(
               firstText: result.name,
-              secondText: " ${result.result}",
+              secondText: " ${result.vote}",
               firstTextColor: mainColor,
               secondTextColor: secondaryColor,
             ))

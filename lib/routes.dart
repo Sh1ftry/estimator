@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:estimator/screens/home.dart';
 import 'package:estimator/screens/configuration.dart';
 import 'package:estimator/screens/join_session.dart';
 import 'package:estimator/screens/start_session.dart';
@@ -12,6 +11,8 @@ final Map<String, WidgetBuilder> routes = {
   '/join': (context) => JoinSession(),
   '/config': (context) => Configuration(),
   '/tasks': (context) => TaskList(),
-  '/vote': (context) => TaskVoting(),
-  '/results': (context) => VotingResults(),
+  '/vote/host': (context) => TaskVoting(isHost: true),
+  '/vote/user': (context) => TaskVoting(isHost: false),
+  '/results/host': (context) => VotingResults(isHost: true),
+  '/results/user': (context) => VotingResults(isHost: false),
 };

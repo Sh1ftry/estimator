@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:estimator/constants.dart';
-import 'package:estimator/models/voting_arguments.dart';
-import 'package:estimator/services/socket.dart';
+import 'package:estimator/services/estimation_service.dart';
 import 'package:estimator/widgets/button.dart';
 import 'package:estimator/widgets/grid.dart';
 import 'package:estimator/widgets/layout.dart';
@@ -8,37 +9,69 @@ import 'package:estimator/widgets/text.dart';
 import 'package:estimator/widgets/two_color_text.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class TaskVoting extends StatefulWidget {
+  const TaskVoting({Key key, this.isHost}) : super(key: key);
+
+  final bool isHost;
+
   @override
   _TaskVotingState createState() => _TaskVotingState();
 }
 
 class _TaskVotingState extends State<TaskVoting> {
-  final IO.Socket _socket = EstimatorServer().socket;
-
-  VotingArguments _votingArguments;
   int _votes = 0;
   List<String> _estimates = [];
   int _selected = -1;
+  String _task = "";
+  String _sessionCode = "";
+  int _usersCount = 1;
+
+  EstimationService _server = EstimationService();
+  StreamSubscription<String> taskStreamSubscription;
+  StreamSubscription<int> usersCountStreamSubscription;
+  StreamSubscription<int> votesCountStreamSubscription;
+  StreamSubscription<List> resultsStreamSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadEstimates();
-    _socket.on('changed', _changeTask);
-    _socket.on('joined', _changeMaxUsers);
-    _socket.on('user left', _changeMaxUsers);
-    _socket.on('voted', _changeVotes);
+    _server.sessionCode.take(1).listen((sessionCode) {
+      setState(() {
+        _sessionCode = sessionCode;
+      });
+    });
+    resultsStreamSubscription = _server.results.listen((results) {
+      Navigator.pushNamed(context, '/results/host', arguments: results);
+      _selected = -1;
+    });
+    taskStreamSubscription = _server.task.listen((task) {
+      setState(() {
+        if(task != _task) {
+          _selected = -1;
+        }
+        _task = task;
+      });
+    });
+    usersCountStreamSubscription = _server.maxVotes.listen((usersCount) {
+      setState(() {
+        _usersCount = usersCount;
+      });
+    });
+    votesCountStreamSubscription = _server.votes.listen((votes) {
+      setState(() {
+        _votes = votes;
+      });
+    });
   }
 
   @override
   void dispose() {
-    _socket.off('changed', _changeTask);
-    _socket.off('joined', _changeMaxUsers);
-    _socket.off('user left', _changeMaxUsers);
-    _socket.off('voted', _changeVotes);
+    taskStreamSubscription.cancel();
+    usersCountStreamSubscription.cancel();
+    votesCountStreamSubscription.cancel();
+    resultsStreamSubscription.cancel();
     super.dispose();
   }
 
@@ -49,49 +82,23 @@ class _TaskVotingState extends State<TaskVoting> {
     });
   }
 
-  _navigateToResults(task, isHost, sessionCode) async {
-    await Navigator.pushNamed(
-      context,
-      '/results',
-      arguments: _votingArguments,
-    );
-    setState(() {
-      _votes = 0;
-      _selected = -1;
-    });
-  }
-
-  _changeTask(task) {
-    setState(() {
-      _selected = -1;
-      _votingArguments.task = task;
-    });
-  }
-
-  _changeMaxUsers(usersCount) {
-    setState(() {
-      _votingArguments.voters = usersCount;
-    });
-  }
-
-  _changeVotes(votes) {
-    setState(() {
-      _votes = votes;
-    });
+  _leave() {
+    if(widget.isHost) {
+      _server.vote("");
+    } else {
+      _server.disconnect();
+    }
+    Navigator.pop(context, "left");
   }
 
   @override
   Widget build(BuildContext context) {
-    if(_votingArguments == null) {
-      _votingArguments = ModalRoute.of(context).settings.arguments;
-    }
-
     return EstimatorLayout(widgets: [
       Padding(
         padding: TOP_PADDING,
         child: EstimatorTwoColorText(
           firstText: 'session code ',
-          secondText: _votingArguments.sessionCode,
+          secondText: _sessionCode,
           firstTextColor: LIGHT_GRAY,
           secondTextColor: DARK_GREEN,
         ),
@@ -106,7 +113,7 @@ class _TaskVotingState extends State<TaskVoting> {
       Padding(
         padding: HORIZONTAL_PADDING,
         child: EstimatorText(
-          text: _votingArguments.task.isEmpty ? "waiting for host to select task" : _votingArguments.task,
+          text: _task.isEmpty ? "waiting for host to select task" : _task,
           color: DARK_GREEN,
         ),
       ),
@@ -114,7 +121,7 @@ class _TaskVotingState extends State<TaskVoting> {
         padding: TOP_PADDING,
         child: EstimatorTwoColorText(
           firstText: 'votes',
-          secondText: ' $_votes/${_votingArguments.voters}',
+          secondText: ' $_votes/$_usersCount',
           firstTextColor: LIGHT_GRAY,
           secondTextColor: DARK_GREEN,
         ),
@@ -124,26 +131,26 @@ class _TaskVotingState extends State<TaskVoting> {
         selected: _selected,
         onPressed: (index) => {
           setState(() {
-            if (_selected == index || _votingArguments.task.isEmpty) {
+            if (_selected == index || _task.isEmpty) {
               _selected = -1;
+              _server.vote("");
             } else {
               _selected = index;
+              _server.vote(_estimates[index]);
             }
           })
         },
       ),
-      _votingArguments.isHost
+      widget.isHost
           ? EstimatorButton(
               text: 'Finish voting',
-              onPressed: () => {
-                _navigateToResults(_votingArguments.task, _votingArguments.isHost, _votingArguments.sessionCode)
-              },
+              onPressed: () => {_server.finishVoting()},
             )
           : Container(),
       EstimatorButton(
-        text: _votingArguments.isHost ? 'Go back' : 'Leave',
+        text: widget.isHost ? 'Go back' : 'Leave',
         bottomMargin: BOTTOM_MARGIN,
-        onPressed: () => {Navigator.pop(context, "left")},
+        onPressed: () => {_leave()},
       )
     ]);
   }

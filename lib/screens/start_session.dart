@@ -1,12 +1,11 @@
 import 'package:estimator/constants.dart';
-import 'package:estimator/services/socket.dart';
+import 'package:estimator/services/estimation_service.dart';
 import 'package:estimator/widgets/button.dart';
 import 'package:estimator/widgets/layout.dart';
 import 'package:estimator/widgets/logo.dart';
 import 'package:estimator/widgets/text_field.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:uuid/uuid.dart';
 
 class StartSession extends StatefulWidget {
@@ -18,7 +17,7 @@ class _StartSessionState extends State<StartSession> {
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _estimatesController = TextEditingController();
 
-  IO.Socket _socket = EstimatorServer().socket;
+  EstimationService _server = EstimationService();
 
   @override
   void initState() {
@@ -34,8 +33,8 @@ class _StartSessionState extends State<StartSession> {
     });
   }
 
-  _navigateToTaskList(room_id) {
-    Navigator.pushNamed(context, '/tasks', arguments: room_id);
+  _navigateToTaskList() {
+    Navigator.pushNamed(context, '/tasks');
   }
 
   @override
@@ -53,12 +52,10 @@ class _StartSessionState extends State<StartSession> {
       EstimatorButton(
         text: 'Start a new session',
         onPressed: () {
-          _socket.connect();
-          _socket.emitWithAck(
-            'start',
-            [Uuid().v4(), _displayNameController.text],
-            ack: (data) => _navigateToTaskList(data["room_id"]),
-          );
+          _server.connect();
+          _server
+              .startSession(Uuid().v4(), _displayNameController.text)
+              .whenComplete(_navigateToTaskList);
         },
       ),
       EstimatorButton(
