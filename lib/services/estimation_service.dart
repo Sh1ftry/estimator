@@ -17,6 +17,7 @@ class EstimationService {
   final _taskSubject = ReplaySubject<String>(maxSize: 1);
   final _votesSubject = ReplaySubject<int>(maxSize: 1);
   final _maxVotesSubject = ReplaySubject<int>(maxSize: 1);
+  final _estimatesSubject = ReplaySubject<List<String>>(maxSize: 1);
   final _resultsSubject = PublishSubject<List<EstimatorVote>>();
   final _hostLeftSubject = PublishSubject<int>();
 
@@ -68,20 +69,21 @@ class EstimationService {
     socket.disconnect();
   }
 
-  Future startSession(userId, displayName) async {
+  Future startSession(String userId, String displayName, String estimates) async {
     Completer c = new Completer();
     socket.emitWithAck(
       'start',
-      [userId, displayName],
+      [userId, displayName, estimates],
       ack: (String sessionCode) {
         _sessionCodeSubject.add(sessionCode);
-        c.complete();
+        _estimatesSubject.add(estimates.split(" "));
+        c.complete(sessionCode);
       },
     );
-    return c.future;
+    return c.future.timeout(Duration(seconds: 3));
   }
 
-  Future joinSession(roomId, userId, displayName) async {
+  Future joinSession(String roomId, String userId, String displayName) async {
     _sessionCodeSubject.add(roomId);
     Completer c = new Completer();
     socket.emitWithAck(
@@ -90,10 +92,11 @@ class EstimationService {
       ack: (data) {
         _taskSubject.add(data["task"]);
         _maxVotesSubject.add(data["users"]);
+        _estimatesSubject.add(data["estimates"].split(" "));
         c.complete(data);
       },
     );
-    return c.future;
+    return c.future.timeout(Duration(seconds: 3));
   }
 
   void changeTask(String task) {
@@ -129,8 +132,16 @@ class EstimationService {
     return _resultsSubject.stream;
   }
 
+  Stream<List<String>> get estimates {
+    return _estimatesSubject.stream;
+  }
+
+  Stream<int> get hostLeft {
+    return _hostLeftSubject.stream;
+  }
+
   final IO.Socket socket = IO.io(
-    'http://10.0.2.2:3000',
+    'http://192.168.1.10:3000',
     OptionBuilder().disableAutoConnect().setTransports(['websocket']).build(),
   );
 }

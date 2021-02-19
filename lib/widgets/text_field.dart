@@ -8,11 +8,13 @@ class EstimatorTextField extends StatelessWidget {
     this.hintText,
     this.validator,
     this.controller,
+    this.errorText,
   }) : super(key: key);
 
   final String hintText;
   final Function(String) validator;
   final TextEditingController controller;
+  final String errorText;
 
   UnderlineInputBorder _getBorder(Color color) {
     return UnderlineInputBorder(
@@ -54,7 +56,7 @@ class EstimatorTextField extends StatelessWidget {
               errorBorder: _getBorder(RED),
               focusedErrorBorder: _getBorder(RED),
               labelText: hintText,
-              //hintText: hintText,
+              errorText: errorText,
               labelStyle: TextStyle(color: LIGHT_GRAY, fontSize: 20.0),
             ),
           ),

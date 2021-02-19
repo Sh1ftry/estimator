@@ -24,6 +24,7 @@ class VotingResults extends StatefulWidget {
 class _VotingResultsState extends State<VotingResults> {
   EstimationService _server = EstimationService();
   StreamSubscription<String> taskStreamSubscription;
+  StreamSubscription<int> hostLeftStreamSubscription;
 
   String _task = "";
   String _sessionCode = "";
@@ -58,11 +59,15 @@ class _VotingResultsState extends State<VotingResults> {
         Navigator.pop(context);
       }
     });
+    hostLeftStreamSubscription = _server.hostLeft.listen((votes) {
+      _leave();
+    });
   }
 
   @override
   void dispose() {
     taskStreamSubscription.cancel();
+    hostLeftStreamSubscription.cancel();
     super.dispose();
   }
 
@@ -112,8 +117,7 @@ class _VotingResultsState extends State<VotingResults> {
             Padding(
               padding: TOP_PADDING,
               child: EstimatorResults(
-                  mean: "3.6",
-                  median: "3",
+                  results: _results,
                   mainColor: DARK_GREEN,
                   secondaryColor: LIGHT_GRAY),
             ),

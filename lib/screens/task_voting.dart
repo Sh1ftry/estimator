@@ -32,18 +32,25 @@ class _TaskVotingState extends State<TaskVoting> {
   StreamSubscription<int> usersCountStreamSubscription;
   StreamSubscription<int> votesCountStreamSubscription;
   StreamSubscription<List> resultsStreamSubscription;
+  StreamSubscription<int> hostLeftStreamSubscription;
 
   @override
   void initState() {
     super.initState();
-    _loadEstimates();
     _server.sessionCode.take(1).listen((sessionCode) {
       setState(() {
         _sessionCode = sessionCode;
       });
     });
+    _server.estimates.take(1).listen((estimates) {
+      print(estimates);
+      setState(() {
+        _estimates = estimates;
+      });
+    });
     resultsStreamSubscription = _server.results.listen((results) {
-      Navigator.pushNamed(context, '/results/host', arguments: results);
+      final routeName = widget.isHost ? '/results/host' : '/results/user';
+      Navigator.pushNamed(context, routeName, arguments: results);
       _selected = -1;
     });
     taskStreamSubscription = _server.task.listen((task) {
@@ -64,6 +71,9 @@ class _TaskVotingState extends State<TaskVoting> {
         _votes = votes;
       });
     });
+    hostLeftStreamSubscription = _server.hostLeft.listen((votes) {
+      _leave();
+    });
   }
 
   @override
@@ -73,13 +83,6 @@ class _TaskVotingState extends State<TaskVoting> {
     votesCountStreamSubscription.cancel();
     resultsStreamSubscription.cancel();
     super.dispose();
-  }
-
-  _loadEstimates() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _estimates = prefs.getString('estimates').split(" ");
-    });
   }
 
   _leave() {

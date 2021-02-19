@@ -47,6 +47,19 @@ class _ConfigurationState extends State<Configuration> {
             EstimatorTextField(
               hintText: 'Display name',
               controller: _displayNameController,
+              validator: (value) {
+                String trimmedValue = value.trim();
+                RegExp regex = RegExp(r'^[a-zA-Z0-9\s]+$');
+                if (trimmedValue.length > 0) {
+                  if(!regex.hasMatch(trimmedValue)) {
+                    return 'Only numbers and letters are allowed';
+                  }
+                  if(trimmedValue.length > 32 || trimmedValue.length < 3) {
+                    return 'Display name should be between 3 and 32 characters';
+                  }
+                }
+                return null;
+              },
             ),
             EstimatorTextField(
               hintText: 'Space separated estimates',
@@ -68,6 +81,7 @@ class _ConfigurationState extends State<Configuration> {
         onPressed: () {
           if (_formKey.currentState.validate()) {
             _saveConfiguration();
+            Navigator.pop(context);
           }
         },
       ),

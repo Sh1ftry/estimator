@@ -21,6 +21,7 @@ environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
+  get: ^3.4.2
   rxdart: ^0.25.0
   uuid: ^2.2.2
   http: ^0.12.2
