@@ -1,6 +1,8 @@
 class VotingArguments {
-  VotingArguments(this.task, this.isHost);
+  VotingArguments(this.task, this.isHost, this.sessionCode, this.voters);
 
-  final String task;
-  final bool isHost;
+  String task;
+  bool isHost;
+  String sessionCode;
+  int voters;
 }

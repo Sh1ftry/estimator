@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:estimator/constants.dart';
 import 'package:estimator/models/vote.dart';
-import 'package:estimator/models/voting_arguments.dart';
+import 'package:estimator/services/estimation_service.dart';
 import 'package:estimator/widgets/button.dart';
 import 'package:estimator/widgets/double_button.dart';
 import 'package:estimator/widgets/layout.dart';
@@ -11,30 +13,74 @@ import 'package:estimator/widgets/votes.dart';
 import 'package:flutter/widgets.dart';
 
 class VotingResults extends StatefulWidget {
+  VotingResults({Key key, this.isHost}) : super(key: key);
+
+  final bool isHost;
+
   @override
   _VotingResultsState createState() => _VotingResultsState();
 }
 
 class _VotingResultsState extends State<VotingResults> {
-  final ScrollController _scrollController = ScrollController();
+  EstimationService _server = EstimationService();
+  StreamSubscription<String> taskStreamSubscription;
+  StreamSubscription<int> hostLeftStreamSubscription;
 
-  final _results = [
-    EstimatorVote("Michał", "3"),
-    EstimatorVote("Adam", "3"),
-    EstimatorVote("Wojtek", "2"),
-    EstimatorVote("Florian", "5")
-  ];
+  String _task = "";
+  String _sessionCode = "";
+
+  void _nexTask() {
+    Navigator.popUntil(context, ModalRoute.withName('/tasks'));
+  }
+
+  void _revote() {
+    _server.changeTask(_task);
+  }
+
+  void _leave() {
+    _server.disconnect();
+    Navigator.popUntil(context, ModalRoute.withName(Navigator.defaultRouteName));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _server.sessionCode.take(1).listen((sessionCode) {
+      setState(() {
+        _sessionCode = sessionCode;
+      });
+    });
+    taskStreamSubscription = _server.task.listen((task) {
+      if(_task.isEmpty) {
+        setState(() {
+          _task = task;
+        });
+      } else {
+        Navigator.pop(context);
+      }
+    });
+    hostLeftStreamSubscription = _server.hostLeft.listen((votes) {
+      _leave();
+    });
+  }
+
+  @override
+  void dispose() {
+    taskStreamSubscription.cancel();
+    hostLeftStreamSubscription.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final VotingArguments votingArguments =
+    final List<EstimatorVote> _results =
         ModalRoute.of(context).settings.arguments;
     return EstimatorLayout(widgets: [
       Padding(
         padding: TOP_PADDING,
         child: EstimatorTwoColorText(
           firstText: 'session code ',
-          secondText: 'xkd11',
+          secondText: _sessionCode,
           firstTextColor: LIGHT_GRAY,
           secondTextColor: DARK_GREEN,
         ),
@@ -49,7 +95,7 @@ class _VotingResultsState extends State<VotingResults> {
       Padding(
         padding: HORIZONTAL_PADDING,
         child: EstimatorText(
-          text: votingArguments.task,
+          text: _task,
           color: DARK_GREEN,
         ),
       ),
@@ -71,26 +117,25 @@ class _VotingResultsState extends State<VotingResults> {
             Padding(
               padding: TOP_PADDING,
               child: EstimatorResults(
-                  mean: "3.6",
-                  median: "3",
+                  results: _results,
                   mainColor: DARK_GREEN,
                   secondaryColor: LIGHT_GRAY),
             ),
           ],
         ),
       ),
-      votingArguments.isHost ? EstimatorDoubleButton(
-        leftText: 'Revote',
-        leftOnPressed: () => {Navigator.pop(context)},
-        rightText: 'Next task',
-        rightOnPressed: () => {
-          Navigator.popUntil(context, ModalRoute.withName('/tasks'))
-        },
-      ) : Container(),
+      widget.isHost
+          ? EstimatorDoubleButton(
+              leftText: 'Revote',
+              leftOnPressed: () => {_revote()},
+              rightText: 'Next task',
+              rightOnPressed: () => {_nexTask()},
+            )
+          : Container(),
       EstimatorButton(
         text: 'Leave',
         bottomMargin: BOTTOM_MARGIN,
-        onPressed: () => {Navigator.pop(context)},
+        onPressed: () => {_leave()},
       )
     ]);
   }

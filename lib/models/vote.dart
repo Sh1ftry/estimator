@@ -1,6 +1,6 @@
 class EstimatorVote {
-  EstimatorVote(this.name, this.result);
+  EstimatorVote(this.name, this.vote);
 
   final String name;
-  final String result;
+  final String vote;
 }

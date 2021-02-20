@@ -1,6 +1,6 @@
 import 'package:estimator/constants.dart';
-import 'package:estimator/models/voting_arguments.dart';
 import 'package:estimator/screens/edit_task.dart';
+import 'package:estimator/services/estimation_service.dart';
 import 'package:estimator/widgets/button.dart';
 import 'package:estimator/widgets/double_button.dart';
 import 'package:estimator/widgets/layout.dart';
@@ -17,8 +17,20 @@ class TaskList extends StatefulWidget {
 class _TaskListState extends State<TaskList> {
   final ScrollController _scrollController = ScrollController();
   int _selectedTask = -1;
+  String _sessionCode = '';
 
+  EstimationService _server = EstimationService();
   final List<String> _tasks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _server.sessionCode.take(1).listen((sessionCode) {
+      setState(() {
+        _sessionCode = sessionCode;
+      });
+    });
+  }
 
   _navigateToTaskEdit(BuildContext context, int index) async {
     final task = await Navigator.push(
@@ -41,12 +53,11 @@ class _TaskListState extends State<TaskList> {
   }
 
   _navigateToVoting(BuildContext context) async {
+    _server.changeTask(_tasks[_selectedTask]);
     final results = await Navigator.pushNamed(
       context,
-      '/vote',
-      arguments: VotingArguments(_tasks[_selectedTask], true),
+      '/vote/host'
     );
-    print(results);
     if(results == null) {
       setState(() {
         _tasks.removeAt(_selectedTask);
@@ -63,7 +74,7 @@ class _TaskListState extends State<TaskList> {
           padding: TOP_PADDING,
           child: EstimatorTwoColorText(
             firstText: 'session code ',
-            secondText: 'xkd11',
+            secondText: _sessionCode,
             firstTextColor: LIGHT_GRAY,
             secondTextColor: DARK_GREEN,
           ),
@@ -121,7 +132,10 @@ class _TaskListState extends State<TaskList> {
         EstimatorButton(
           text: 'End session',
           bottomMargin: BOTTOM_MARGIN,
-          onPressed: () => {Navigator.pop(context)},
+          onPressed: () {
+            _server.disconnect();
+            Navigator.pop(context);
+          },
         )
       ],
     );
