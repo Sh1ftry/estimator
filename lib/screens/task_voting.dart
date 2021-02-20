@@ -82,6 +82,7 @@ class _TaskVotingState extends State<TaskVoting> {
     usersCountStreamSubscription.cancel();
     votesCountStreamSubscription.cancel();
     resultsStreamSubscription.cancel();
+    hostLeftStreamSubscription.cancel();
     super.dispose();
   }
 
@@ -89,6 +90,7 @@ class _TaskVotingState extends State<TaskVoting> {
     if(widget.isHost) {
       _server.vote("");
     } else {
+      _server.vote("");
       _server.disconnect();
     }
     Navigator.pop(context, "left");

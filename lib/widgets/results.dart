@@ -31,7 +31,7 @@ class EstimatorResults extends StatelessWidget {
     if (areNumbers) {
       List<double> numbers = results.map((e) => double.parse(e.vote)).toList();
       numbers.sort((a, b) => a.compareTo(b));
-      mean = (numbers.reduce((a, b) => a + b) / results.length).toString();
+      mean = (numbers.reduce((a, b) => a + b) / results.length).toStringAsFixed(1);
       int middle = (numbers.length / 2).floor();
       if (numbers.length % 2 == 0) {
         median = ((numbers[middle] + numbers[middle - 1]) / 2).toString();

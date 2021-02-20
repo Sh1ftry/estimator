@@ -93,6 +93,7 @@ class EstimationService {
         _taskSubject.add(data["task"]);
         _maxVotesSubject.add(data["users"]);
         _estimatesSubject.add(data["estimates"].split(" "));
+        _votesSubject.add(data["votes"]);
         c.complete(data);
       },
     );
@@ -141,7 +142,7 @@ class EstimationService {
   }
 
   final IO.Socket socket = IO.io(
-    'http://192.168.1.10:3000',
+    'http://estimator.cvapr.xyz:3000',
     OptionBuilder().disableAutoConnect().setTransports(['websocket']).build(),
   );
 }

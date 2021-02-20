@@ -66,7 +66,7 @@ class _ConfigurationState extends State<Configuration> {
               controller: _estimatesController,
               validator: (value) {
                 String trimmedValue = value.trim();
-                RegExp regex = RegExp(r'^([a-zA-Z0-9]+\s?)+$');
+                RegExp regex = RegExp(r'^([a-zA-Z0-9\.]+\s?)+$');
                 if (trimmedValue.length > 0 && !regex.hasMatch(trimmedValue)) {
                   return 'Only numbers and letters are allowed';
                 }

@@ -36,7 +36,6 @@ class _StartSessionState extends State<StartSession> {
   }
 
   void _navigateToTaskList() {
-    print("i am here");
     Navigator.pushNamed(context, '/tasks');
   }
 
@@ -89,7 +88,7 @@ class _StartSessionState extends State<StartSession> {
               hintText: 'Space separated estimates',
               validator: (value) {
                 String trimmedValue = value.trim();
-                RegExp regex = RegExp(r'^([a-zA-Z0-9]+\s?)+$');
+                RegExp regex = RegExp(r'^([a-zA-Z0-9\.]+\s?)+$');
                 if (!regex.hasMatch(trimmedValue)) {
                   return 'Only numbers and letters are allowed';
                 }
